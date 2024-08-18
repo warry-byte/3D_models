@@ -2,70 +2,74 @@ from enum import Enum
 from solid2 import *
 import numpy as np
 
-
-class Configuration(Enum):
-    BIG_EDGE = 1
-    SPHERICAL = 2
-
-CONFIG = Configuration.BIG_EDGE
-
 set_global_fn(100)
 
+
+def connect_two_spheres(s1, s2, cylinder_radius, color="blue"):
+    """
+    Make a bridge between two spheres.
+    :param s1: Center coordinates of sphere 1
+    :param s2: Center coordinates of sphere 2
+    :return:
+    """
+    dist = np.linalg.norm(s2 - s1)  # dist = R in spherical coords - not to confuse with r of cylinder
+    s2_s1 = (s2 - s1) / dist
+    x = s2_s1[0]
+    y = s2_s1[1]
+    z = s2_s1[2]
+    theta_deg = np.arccos(z / dist) * 180 / np.pi
+    phi_deg = np.arcsin(
+        y / (dist * np.sin(theta_deg))
+    ) * 180 / np.pi
+
+    b = cylinder(
+        r=cylinder_radius, h=dist
+    # ).rotateY(theta_deg).rotateZ(phi_deg).translate(s1).color(color)
+    ).rotateY(theta_deg).color(color)
+
+    return b
+
+
 sphere_radius = 0.2
-quadrinity_radius = 2
+# quadrinity_radius = 2
 bridge_radius = 0.1  # TODO choose a more meaningful value
 spheres = []
 bridges = []
-angle = 2*np.pi/3
 
-if CONFIG == Configuration.BIG_EDGE:
-    upper_edge_length = quadrinity_radius*np.sqrt(3)  # Edge: cos30° = Edge/2/radius <-> edge = 2r cos30° = 2r.sqrt(3)/2 = r sqrt(3)
-elif CONFIG == Configuration.SPHERICAL:
-    upper_edge_length = quadrinity_radius*np.sqrt(2)
+# Spherical coordinates of the 4 corners.
+# Physics conventions (R, phi, theta) (phi = rotateZ, theta = angle with Z axis)
+# To translate this into OpenSCAD, we do:
+# Translate in Z
+# RotateY (for theta rotation)
+# RotateZ (because Phi is always rotateZ)
+# edge_length = quadrinity_radius * np.sqrt(3)
+edge_length = 3
 
-# Spheres S0 to S2: place first sphere at eg (2, 0, 0), then rotate at 120° 3 times
-spheres_coords = quadrinity_radius*np.asarray(
-    [[1, 0, 0],
-    [np.cos(angle), np.sin(angle), 0],
-    [np.cos(2*angle), np.sin(2*angle), 0]]
+# sphere_coords = np.asarray([
+#     [quadrinity_radius, 0, 0], # S0
+#     [quadrinity_radius, 120, 0],
+#     [quadrinity_radius, 120, 120],
+#     [quadrinity_radius, 120, 240]]  # S3
+# )
+sphere_coords = np.asarray([
+    [0, 0, edge_length * np.sqrt(6) / 3],  # S0
+    [0, -edge_length * np.sqrt(3) / 3, 0],
+    [-edge_length / 2, edge_length * np.sqrt(3) / 6, 0],
+    [edge_length / 2, edge_length * np.sqrt(3) / 6, 0]]  # S3
 )
-for i in range(3):
-    s = sphere(sphere_radius).translate(spheres_coords[i, :])
+
+colors = ["red", "green", "blue", "yellow"]  # Useful for debugging
+
+for i in range(4):
+    s = (sphere(sphere_radius)
+         .translate(sphere_coords[i])
+         )
+
     spheres.append(s)
 
-    # Bridge spheres S0 to S2 with cylinders
-    b = (cylinder(
-            r=bridge_radius,
-            h=quadrinity_radius*np.sqrt(3)
-        )
-    .rotateY(90)
-    .rotateZ(30+120*(i+1))
-    .translate(spheres_coords[i, :]))
-
-    bridges.append(b)
-
-# Sphere S3: Must be placed such that the 6 edges of the quadrinity are of equal length
-# alpha: angle O-S0-S3. We have cos(alpha) = r/edge
-if CONFIG == Configuration.BIG_EDGE:
-    alpha_rad = np.arccos(quadrinity_radius/upper_edge_length)
-    h = quadrinity_radius * np.tan(alpha_rad)  # height of S3
-elif CONFIG == Configuration.SPHERICAL:
-    alpha_rad = np.pi/4
-    h = quadrinity_radius
-
-s = (sphere(sphere_radius)
-     .translateZ(h))
-spheres.append(s)
-
-# Bridge sphere S3 with other spheres
-for i in range(3):
-    b = (cylinder(
-        r=bridge_radius,
-        h=upper_edge_length
-    )
-         .rotateY(90+alpha_rad*180/np.pi)
-         .rotateZ(i * 120)
-         .translateZ(h)
+    # Bridge spheres S0 to S3 with cylinders
+    b = connect_two_spheres(
+        sphere_coords[(i + 1) % 4], sphere_coords[i], bridge_radius, colors[i]
     )
     bridges.append(b)
 
