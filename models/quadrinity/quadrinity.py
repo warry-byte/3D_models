@@ -61,11 +61,10 @@ def quadrinity(
         b = connect_points(center_coord, sphere_coords[i], bridge_radius)
         bridges.append(b)
 
-    return spheres, bridges
+    return union()(*spheres, *bridges)
 
 
-if __name__ == "main":
+if __name__ == "__main__":
     set_global_fn(100)
-    spheres, bridges = quadrinity()
-    combined_model = union()(spheres, bridges)
+    combined_model = quadrinity()
     combined_model.save_as_scad()
