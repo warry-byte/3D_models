@@ -5,15 +5,15 @@ import numpy as np
 set_global_fn(100)
 
 
-def connect_two_spheres(s1, s2, cylinder_radius, color="blue"):
+def connect_points(p1, p2, cylinder_radius, color="blue"):
     """
-    Make a bridge between two spheres.
-    :param s1: Center coordinates of sphere 1
-    :param s2: Center coordinates of sphere 2
+    Draw cylinder by giving a start point and an end point.
+    :param p1: Center coordinates of point 1
+    :param p2: Center coordinates of point 2
     :return:
     """
-    dist = np.linalg.norm(s2 - s1)  # dist = R in spherical coords - not to confuse with r of cylinder
-    s2_s1 = (s2 - s1) / dist  # unit vector
+    dist = np.linalg.norm(p2 - p1)  # dist = R in spherical coords - not to confuse with r of cylinder
+    s2_s1 = (p2 - p1) / dist  # unit vector
     x = s2_s1[0]
     y = s2_s1[1]
     z = s2_s1[2]
@@ -28,7 +28,7 @@ def connect_two_spheres(s1, s2, cylinder_radius, color="blue"):
 
     b = cylinder(
         r=cylinder_radius, h=dist
-    ).rotateY(theta_deg).rotateZ(phi_deg).translate(s1).color(color)
+    ).rotateY(theta_deg).rotateZ(phi_deg).translate(p1).color(color)
     # ).rotateY(90).rotateZ(phi_deg).color(color)
 
     return b
@@ -74,21 +74,21 @@ for i in range(4):
 # Connect spheres
 # S0 to Si
 for i in range(3):
-    b = connect_two_spheres(
+    b = connect_points(
         sphere_coords[0], sphere_coords[i+1], bridge_radius, colors[i]
     )
     bridges.append(b)
 
 # Bottom bridges
-b = connect_two_spheres(
+b = connect_points(
     sphere_coords[1], sphere_coords[2], bridge_radius, colors[0]
 )
 bridges.append(b)
-b = connect_two_spheres(
+b = connect_points(
     sphere_coords[1], sphere_coords[3], bridge_radius, colors[0]
 )
 bridges.append(b)
-b = connect_two_spheres(
+b = connect_points(
     sphere_coords[2], sphere_coords[3], bridge_radius, colors[0]
 )
 bridges.append(b)
@@ -99,7 +99,7 @@ s = sphere(sphere_radius).translate(center_coord)
 spheres.append(s)
 
 for i in range(4):
-    b = connect_two_spheres(center_coord, sphere_coords[i], bridge_radius)
+    b = connect_points(center_coord, sphere_coords[i], bridge_radius)
     bridges.append(b)
 
 combined_model = union()(spheres, bridges)
